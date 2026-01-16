@@ -1,20 +1,3 @@
-# HTTP: The Parts You Actually Need To Know
-
-## Introduction
-
-The backend landscape is vast and ever-evolving. While it's impossible to cover every component in detail, focusing on the fundamentals used in the majority of codebases-roughly 90%-provides a solid foundation for any developer. At the heart of this foundation lies the HTTP protocol, the primary medium through which browsers communicate with servers to send and receive data.
-Expand
-message.txt
-28 KB
-# Big O Notation and the Climb Over Constants.
-
-I was recently going through the implementations and complexities of common sorting algorithms such as Quicksort and Mergesort. I noticed that many programmers, including myself, often ignore the constant factors when calculating time complexity. This is typically acceptable for a high-level analysis, but there are situations where this oversight can lead to misunderstandings about the efficiency of algorithms.
-
-![Big O](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*2YqfbW94nB0apdhCqDcbeA.png)
-Expand
-message.txt
-5 KB
-﻿
 # Big O Notation and the Climb Over Constants.
 
 I was recently going through the implementations and complexities of common sorting algorithms such as Quicksort and Mergesort. I noticed that many programmers, including myself, often ignore the constant factors when calculating time complexity. This is typically acceptable for a high-level analysis, but there are situations where this oversight can lead to misunderstandings about the efficiency of algorithms.
