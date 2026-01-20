@@ -18,6 +18,7 @@ A comprehensive collection of in-depth articles covering backend engineering fun
 | 06 | [Data Validations & Transformations](./06_data_validations_and_transformations.md) | Input validation strategies, data sanitization, and transformation pipelines |
 | 07 | [Controllers, Services, Repositories & Middleware](./07_controllers_services_repositories_middlewares_and_request_context.md) | Layered architecture, separation of concerns, request lifecycle, and context propagation |
 | 08 | [REST API Design](./08_rest_api_design.md) | Designing intuitive APIs: URL structure, HTTP methods, idempotency, pagination, filtering, and best practices |
+| 09 | [Database with Postgres](./09_database_with_postgres.md) | Database foundations: persistence, SQL vs NoSQL, Postgres data types, modeling, indexing, and triggers |
 
 ### Additional Topics
 
@@ -34,7 +35,7 @@ A comprehensive collection of in-depth articles covering backend engineering fun
 
 ## How to Use This Repository
 
-1. **Sequential Learning**: The numbered articles (01-08) are designed to be read in order, building upon concepts from previous articles
+1. **Sequential Learning**: The numbered articles (01-09) are designed to be read in order, building upon concepts from previous articles
 2. **Reference Guide**: Use individual articles as reference material when working on specific topics
 3. **Interview Prep**: Review key concepts and best practices before technical interviews
 
@@ -46,3 +47,4 @@ A comprehensive collection of in-depth articles covering backend engineering fun
 - **Architecture**: Layered patterns, middleware, request context
 - **Data Handling**: Validation, serialization, transformations
 - **Best Practices**: Consistency, error handling, pagination, filtering
+- **Database**: Persistence, SQL vs NoSQL, Postgres data types, modeling, indexing, and triggers
