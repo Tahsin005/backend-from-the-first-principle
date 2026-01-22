@@ -130,16 +130,31 @@ Let's design a project management system.
 
 ### One-to-One (1:1)
 *Used for splitting metadata into separate tables.*
+
+In Postgres, we often use **Custom Enums** to enforce strict categories:
+```sql
+CREATE TYPE project_status AS ENUM ('active', 'completed', 'archived');
+CREATE TYPE task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
+CREATE TYPE member_role AS ENUM ('owner', 'admin', 'member');
+```
+
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE user_profiles (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    avatar_url TEXT,
     bio TEXT,
-    avatar_url TEXT
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -148,14 +163,25 @@ CREATE TABLE user_profiles (
 ```sql
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    description TEXT,
+    status project_status DEFAULT 'active' NOT NULL,
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tasks (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
-    priority INT CHECK (priority BETWEEN 1 AND 5)
+    description TEXT,
+    priority INT DEFAULT 1 CHECK (priority BETWEEN 1 AND 5),
+    status task_status DEFAULT 'pending' NOT NULL,
+    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    due_date DATE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -166,7 +192,9 @@ This requires a **Linking Table**.
 CREATE TABLE project_members (
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    role member_role DEFAULT 'member',
+    role member_role DEFAULT 'member' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (project_id, user_id) -- Composite Primary Key
 );
 ```
@@ -184,12 +212,34 @@ LEFT JOIN user_profiles up ON u.id = up.user_id;
 ```
 We use a **LEFT JOIN** because a user might not have a profile record yet. An INNER JOIN would exclude those users entirely.
 
+### Seeding Data
+In development and testing, you need a way to populate your database with dummy data. Using a `WITH` clause (Common Table Expression or CTE) allows you to insert related data in a single command.
+
+```sql
+WITH inserted_users AS (
+    INSERT INTO users (email, full_name, password_hash)
+    VALUES
+        ('john@example.com', 'John Doe', 'hashed_pass_1'),
+        ('jane@example.com', 'Jane Smith', 'hashed_pass_2')
+    RETURNING id, email
+)
+INSERT INTO user_profiles (user_id, bio)
+SELECT id, 'Developer bio for ' || email
+FROM inserted_users;
+```
+This pattern is extremely powerful for ensuring IDs match up correctly between tables without manual hardcoding.
+
 ### Security: SQL Injection & Parameterization
 Never build queries using string concatenation:
 - **BAD:** `SELECT * FROM users WHERE id = '` + id + `'`
 - **GOOD:** `SELECT * FROM users WHERE id = $1`
 
 Using **Parameterized Queries** ensures the DB treats user input as a literal string, not as part of the query command, essentially shielding your system from hackers.
+
+#### Why Query Parameters?
+In REST API design, **GET requests should not have a request body**. When you need to send dynamic data (like a search keyword or filter) to the server via a GET request, query parameters are the solution. 
+
+However, because these parameters are part of the URL, they are easily manipulated by users. **Parameterization** in your SQL queries is the only way to ensure that a "query parameter" from an API request doesn't turn into a "malicious command" in your database.
 
 ### Advanced API Patterns
 - **Pagination:** Use `LIMIT` and `OFFSET` to fetch small batches.
@@ -203,15 +253,39 @@ Using **Parameterized Queries** ensures the DB treats user input as a literal st
 ### Indices
 Imagine a book with 500 pages. Searching for a specific topic page-by-page is slow (**Sequential Scan**). The **Index** at the back tells you exactly which page to jump to.
 - **B-Tree Index:** The default for Postgres. Speeds up equality (`=`) and range searches.
-- **Trade-off:** Indices speed up READS but slow down WRITES (the DB must update the index on every insert).
+- **Practical Examples:**
+    ```sql
+    CREATE INDEX idx_users_email ON users(email);
+    CREATE INDEX idx_tasks_project_id ON tasks(project_id);
+    CREATE INDEX idx_projects_owner_id ON projects(owner_id);
+    ```
+- **Trade-off:** Indices speed up READS but slow down WRITES (the DB must update the index on every insert or update).
 
 ### Triggers
-Triggers automate actions. A common pattern is updating an `updated_at` column automatically whenever a row is changed.
+Triggers automate actions. A common pattern is updating an `updated_at` column automatically whenever a row is changed. First, we define a reusable function:
+
 ```sql
-CREATE TRIGGER update_timestamp
-BEFORE UPDATE ON projects
-FOR EACH ROW
-EXECUTE FUNCTION refresh_updated_at();
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$ 
+BEGIN 
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE 'plpgsql';
+```
+
+Then, apply it via a trigger to our tables:
+
+```sql
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_projects_updated_at
+    BEFORE UPDATE ON projects
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ---
