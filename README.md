@@ -19,6 +19,9 @@ A comprehensive collection of in-depth articles covering backend engineering fun
 | 07 | [Controllers, Services, Repositories & Middleware](./07_controllers_services_repositories_middlewares_and_request_context.md) | Layered architecture, separation of concerns, request lifecycle, and context propagation |
 | 08 | [REST API Design](./08_rest_api_design.md) | Designing intuitive APIs: URL structure, HTTP methods, idempotency, pagination, filtering, and best practices |
 | 09 | [Database with Postgres](./09_database_with_postgres.md) | Database foundations: persistence, SQL vs NoSQL, Postgres data types, modeling, indexing, and triggers |
+| 10 | [Caching](./10_caching.md) | Optimizing latency from first principles: The "Subset Rule", memory vs. disk physics, real-world case studies (Google, Netflix, X), and implementation strategies like Cache-Aside and Write-Through |
+| 11 | [Task Queues and Background Jobs](./11_task_queues_and_background_jobs.md) | Decoupling logic from the request-response lifecycle: Architecture (Producers, Brokers, Consumers), handling reliability with ACKs, visibility timeouts, and retries with exponential backoff |
+| 12 | [Elastic Search](./12_elastic_search.md) | Beyond SQL `LIKE` and the "Librarian's Flaw": Understanding the Inverted Index, relevance scoring with BM25, and high-performance full-text search vs. traditional databases |
 
 ### Additional Topics
 
@@ -35,16 +38,19 @@ A comprehensive collection of in-depth articles covering backend engineering fun
 
 ## How to Use This Repository
 
-1. **Sequential Learning**: The numbered articles (01-09) are designed to be read in order, building upon concepts from previous articles
+1. **Sequential Learning**: The numbered articles (01-12) are designed to be read in order, building upon concepts from previous articles
 2. **Reference Guide**: Use individual articles as reference material when working on specific topics
 3. **Interview Prep**: Review key concepts and best practices before technical interviews
 
 ## Topics Covered
 
-- **HTTP Protocol**: Methods, headers, status codes, caching, compression
+- **HTTP Protocol**: Methods, headers, status codes, CORS, caching, compression
 - **API Design**: RESTful principles, URL patterns, versioning, documentation
-- **Security**: Authentication, authorization, OAuth, JWT, CORS
-- **Architecture**: Layered patterns, middleware, request context
-- **Data Handling**: Validation, serialization, transformations
-- **Best Practices**: Consistency, error handling, pagination, filtering
+- **Security**: Authentication, authorization, OAuth 2.0, OIDC, JWT
+- **Architecture**: Layered patterns, middleware, request context, separation of concerns
+- **Data Handling**: Validation, serialization, transformations, sanitization
+- **Best Practices**: Consistency, error handling, pagination, filtering, idempotency
 - **Database**: Persistence, SQL vs NoSQL, Postgres data types, modeling, indexing, and triggers
+- **Caching**: Latency optimization, the Subset Rule, RAM vs Disk physics, eviction (LRU, LFU, TTL)
+- **Asynchronous Processing**: Task queues, request-response decoupling, Brokers (Redis, RabbitMQ), retries
+- **Search Engines**: Inverted Index, relevance scoring (BM25), Lucene, typo tolerance, full-text search
