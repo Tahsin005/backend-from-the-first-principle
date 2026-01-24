@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import client from '@/lib/elasticsearch';
 
+// file system
+import fs from 'fs';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -51,6 +54,8 @@ export async function GET(req: NextRequest) {
                         size: 10,
                     });
                     const end = performance.now();
+
+                    fs.writeFileSync('output.json', JSON.stringify(result, null, 2));
                     const total = typeof result.hits.total === 'object' ? result.hits.total.value : result.hits.total;
                     const data = result.hits.hits.map((hit: any) => hit._source);
                     sendData('elastic', { data, total }, Math.round(end - start));
