@@ -63,22 +63,148 @@ The technology powering this "magic" is **Apache Lucene**. It is the core engine
 - **Easy to Use**: It provides a JSON-based Query Domain Specific Language (DSL).
 - **Document-Oriented**: It stores data as JSON documents, similar to MongoDB.
 
-## Relevance Scoring: The BM25 Algorithm
+## Hands-on with Elasticsearch
 
-Speed is only half the battle. A good search engine must provide the *most relevant* results first. Elastic Search uses an algorithm called **BM25** (Best Matching 25) to calculate a relevance score for every result.
+To see how this works in practice, let's look at a real-world scenario. Imagine searching through a news dataset containing thousands of articles with fields like `headline`, `short_description`, and `category`.
 
-The score is influenced by several factors:
+### Basic Search Queries
 
-1.  **Term Frequency (TF)**: How often does the search term appear in this document? (More = Better).
-2.  **Document Frequency (DF)**: How common is this term across *all* documents? If a word like "the" appears everywhere, it's weighted less.
-3.  **Document Length**: A term appearing in a 10-word title is more significant than the same term appearing in a 1,000-word essay.
-4.  **Field Boosting**: You can tell Elastic Search that a match in the `title` field is 10x more important than a match in the `description` field.
+Elasticsearch uses JSON for its queries. The simplest full-text query is the **match query**, which performs a search against a specific field.
 
-| Feature | Description |
-| :--- | :--- |
-| **Typo Tolerance** | Also known as "Fuzzy Search." If a user types "laptp," the engine knows they meant "laptop." |
-| **Type-Ahead** | Similar to Google Search, providing suggestions as the user types based on common queries. |
-| **ELK Stack** | Elastic Search is often used with **Logstash** (log ingestion) and **Kibana** (visualization) for log management. |
+```json
+GET news/_search
+{
+  "query": {
+    "match": {
+      "headline": "robbery"
+    }
+  }
+}
+```
+
+If you want to search across multiple fields (e.g., both headline and description), you use a **multi_match query**:
+
+```json
+GET news/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "robbery",
+      "fields": ["headline", "short_description"]
+    }
+  }
+}
+```
+
+### Understanding the Response
+
+When you execute a query, Elasticsearch returns a detailed JSON response:
+
+```json
+{
+  "took" : 5,                // Time in milliseconds
+  "timed_out" : false,
+  "_shards" : { ... },       // Internal shard statistics
+  "hits" : {
+    "total" : { "value" : 2, "relation" : "eq" },
+    "max_score" : 29.62,     // Highest relevance score
+    "hits" : [
+      {
+        "_id" : "RzrouIsBC1dvdsZHf2cP",
+        "_score" : 29.62,    // How relevant this specific doc is
+        "_source" : {        // The actual document data
+          "headline" : "Bandit The 'Guard Cat' Hailed As Hero...",
+          "category" : "WEIRD NEWS"
+        }
+      }
+    ]
+  }
+}
+```
+
+## The Limits of Lexical Search
+
+What we've done so far is **lexical search**—seeking precise matches for words. While fast, it has significant limitations that make it feel "dumb" to users.
+
+### 1. Inflected Forms
+If a user searches for "robbery", a simple lexical search might miss articles that only contain the word "robbed". To a human, they are the same concept, but to a basic index, they are different strings.
+
+### 2. Synonyms and Similarity
+Lexical search doesn't understand that "theft", "burglary", and "shoplifting" are related. If you search for "theft", you might miss a perfectly relevant article titled "Bank Robbery".
+
+### 3. Typo Intolerance
+A single typo like "robbey" instead of "robbery" will result in zero hits in a strict lexical search.
+
+### 4. Lack of Context (The "New Jersey" Problem)
+In a simple search for "new jersey covid", the engine treats "new", "jersey", and "covid" as independent terms. This might rank an article about a "New variant of the virus in South Africa" higher than a relevant article about "Covid in New Jersey" just because it matches "new" and "virus" frequently.
+
+## Precision and Performance: Improving Search
+
+To solve the problems of lexical search, we use advanced Elasticsearch features that move us toward "Precision Search."
+
+### 1. Boosting Relevant Fields
+Not all fields are created equal. In a news article, a match in the `headline` is usually more important than a match in the `short_description`. We can "boost" fields using the `^` operator.
+
+```json
+GET news/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "elections",
+      "fields": ["headline^4", "short_description"]
+    }
+  }
+}
+```
+In this query, `headline^4` tells Elasticsearch that a match in the headline is 4 times more relevant than a match in the description.
+
+### 2. Custom Scoring with `function_score`
+Sometimes, relevance isn't just about text matching. For news, **recency** (timestamp) and **location** (user's country) might be just as important. The `function_score` query allows us to modify the final score based on these factors.
+
+```json
+{
+  "query": {
+    "function_score": {
+      "query": { ... },
+      "functions": [
+        {
+          "filter": { "term": { "country": "US" } },
+          "weight": 2
+        },
+        {
+          "field_value_factor": {
+            "field": "timestamp",
+            "factor": 2
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### 3. Typo Tolerance with Fuzzy Search
+We can solve the "typo problem" by adding a `fuzziness` parameter. This uses the Edit Distance algorithm to find matches that are "close enough."
+
+```json
+{
+  "query": {
+    "multi_match": {
+      "query": "covi",
+      "fields": ["headline^4", "short_description"],
+      "fuzziness": 1
+    }
+  }
+}
+```
+
+## How it Works: The BM25 Algorithm
+
+Under the hood, all these boosts and matches are powered by the **BM25** (Best Matching 25) algorithm. It calculates a relevance score for every result based on:
+
+1.  **Term Frequency (TF)**: How often the term appears in this document.
+2.  **Document Frequency (DF)**: How common the term is across *all* documents. Rare words (like "Elasticsearch") get more weight than common words (like "the").
+3.  **Document Length**: Matches in shorter fields (like a title) are weighted more than matches in long descriptions.
 
 ## Performance Showdown: Postgres vs. Elastic Search
 
