@@ -16,23 +16,6 @@ By the end, you'll understand not just *how* to use RabbitMQ — but *why* it ex
 
 ---
 
-## Table of Contents
-
-1. [What Is RabbitMQ and Why Does It Exist](#1-what-is-rabbitmq-and-why-does-it-exist)
-2. [Core Concepts](#2-core-concepts)
-3. [Types of Exchanges](#3-types-of-exchanges)
-4. [Hello World: Your First Producer and Consumer](#4-hello-world-your-first-producer-and-consumer)
-5. [Message Acknowledgements](#5-message-acknowledgements)
-6. [Message Durability and Persistence](#6-message-durability-and-persistence)
-7. [Exchange Types in Practice](#7-exchange-types-in-practice)
-8. [Prefetch and Concurrency](#8-prefetch-and-concurrency)
-9. [Dead Letter Queues](#9-dead-letter-queues)
-10. [Real World Pattern: Event-Driven Microservices](#10-real-world-pattern-event-driven-microservices)
-11. [The Management UI](#11-the-management-ui)
-12. [Common Mistakes and Best Practices](#12-common-mistakes-and-best-practices)
-
----
-
 ## 1. What Is RabbitMQ and Why Does It Exist
 
 ### The Problem
